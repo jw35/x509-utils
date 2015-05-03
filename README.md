@@ -11,5 +11,5 @@ get-chain             | Connect to a remote SSL-capable server and display the c
 get-sha1              | Connect to a remote SSL-capable web server, extract its certificate and display its SHA-1 --> SHA-2 transition status
 sumarise-certificate  | As 'display-certificate' but only show selected information from the certificate
 
-
+These scripts all just wrap the `openssl` command-line tool which must be available on PATH. Most error handling (like feeding a CSR to `display-certificate`) is left to `openssl`, with predictable results...
 
