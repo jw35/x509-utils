@@ -4,7 +4,8 @@ A collection of scripts for working with x509 certificate and certificate reques
 
 Script                | Description
 --------------------- | -----------------------------------------
-display-certificate   | Read PEM-formatted certificate data from the supplied file, or stdin. Remove blanks, append/prepend BEGIN/END lines if missing, and lob the result at 'openssl x509' with some helpful formating options
+display-certificate   | Read PEM-formatted certificate data from the
+supplied file, or stdin. Remove leading/trailing blanks, append/prepend BEGIN/END lines if missing, and lob the result at 'openssl x509' with some helpful formating options. Particularly handy for displaying certificate blocks extracted from Shibboleth configuration files.
 display-csr           | Read CSR data from the supplied file, or stdin. Append/prepend BEGIN/END lines if missing, and lob the result at 'openssl req' with some helpful formatting options
 get-certificate       | Connect to a remote SSL-capable server and extract its certificate 
 get-chain             | Connect to a remote SSL-capable server and display the chain of certificates that it supplies
