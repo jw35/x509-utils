@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Read CSR data from the supplied file, or stdin. Append/prepend
+# BEGIN/END lines if missing, and lob the result at 'openssl req'
+
+DATA=$(cat ${1})
+
+START=""
+END=""
+if [ "${DATA:0:10}" != "-----BEGIN" ]; then
+  START="-----BEGIN CERTIFICATE REQUEST-----\n"
+  END="-----END CERTIFICATE REQUEST-----\n"
+fi
+
+{ echo -en "${START}"
+  echo "${DATA}"
+  echo -en "${END}"
+} | openssl req -noout -text -nameopt esc_ctrl,esc_msb,space_eq,sep_multiline

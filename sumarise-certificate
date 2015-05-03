@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Read certificate data from the supplied file, or stdin. Remove
+# blanks, append/prepend BEGIN/END lines if missing, and lob the
+# result at 'openssl x509'
+
+DATA=$(cat ${1} | sed 's/^ *//')
+
+START=""
+END=""
+if [ "${DATA:0:10}" != "-----BEGIN" ]; then
+  START="-----BEGIN CERTIFICATE-----\n"
+  END="-----END CERTIFICATE-----\n"
+fi
+
+#{ echo -en "${START}"
+#  echo "${DATA}"
+#  echo -en "${END}"
+#} | cat
+
+
+{ echo -en "${START}"
+  echo "${DATA}"
+  echo -en "${END}"
+} | openssl x509 -noout -serial -subject -dates -fingerprint -sha1 -nameopt esc_ctrl,esc_msb,space_eq,sep_multiline 
+
+
+

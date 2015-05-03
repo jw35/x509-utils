@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Connect to a remote SSL-capable web server and extract its certificate
+
+set -o pipefail
+
+hostname=${1}
+port=${2:-443}
+
+if [ "!${hostname}!" == "!!" ]; then
+    echo "Usage: ${0} <hostname> [<port>]" >&2
+    exit 255
+fi
+
+response=$(echo | openssl s_client -connect ${hostname}:${port} -servername ${hostname} 2>&1)
+rc=$?
+if [ ${rc} -ne 0 ]; then
+    echo "${response}" >&2
+    exit ${rc}
+fi
+
+echo "${response}" | sed --quiet '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'

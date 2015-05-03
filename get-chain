@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -o pipefail
+
+# Connect to a remote SSL-capable web server and extract its certificate
+
+# Update to supply trusted cert data (-CApath or -CAfile) 
+CAARG='-CApath /etc/ssl/certs'
+
+hostname=${1}
+port=${2:-443}
+
+if [ "!${hostname}!" == "!!" ]; then
+    echo "Usage: ${0} <hostname> [<port>]" >&2
+    exit 255
+fi
+
+response=$(echo | \
+           openssl s_client -connect ${hostname}:${port} ${CAARG} 2>&1)
+rc=$?
+if [ ${rc} -ne 0 ]; then
+    echo "${response}" >&2
+    exit ${rc}
+fi
+
+echo "${response}" | sed --quiet '/Certificate chain/,/---/p'
+echo "Status:"
+echo "${response}" | sed --quiet '/Verify return code:/p'

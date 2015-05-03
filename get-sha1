@@ -1,0 +1,84 @@
+#!/bin/bash
+
+# Connect to a remote SSL-capable web server, extract its certificate
+# and display its SHA-1 --> SHA-2 transition status
+
+set -o pipefail
+set -e
+
+# Update to supply trusted cert data (-CApath or -CAfile) 
+CAARG='-CApath /etc/ssl/certs'
+
+hostname=${1}
+port=${2:-443}
+
+if [ "!${hostname}!" == "!!" ]; then
+    echo "Usage: ${0} <hostname> [<port>]" >&2
+    exit 255
+fi
+
+# Conect to target
+set +e
+response=$(echo | openssl s_client -connect ${hostname}:${port} ${CAARG} 2>&1)
+rc=$?
+if [ ${rc} -ne 0 ]; then
+  echo "${response}" >&2
+  exit ${rc}
+fi
+set -e
+
+# Extract and decode certificate from response
+certificate=$(echo "${response}" | sed --quiet '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p')
+verify=$(echo "${response}" | sed --quiet 's/ *Verify return code *: *//p')
+decoded=$(echo "$certificate" | openssl x509 -noout -text -certopt no_sigdump)
+
+# extract exiry date and signature algorythm from certificaet
+expiry=$(echo "${decoded}" | sed --quiet 's/ *Not After *: *//p')
+expiry_epoc=$(date --date="${expiry}" +%s)
+algorythm=$(echo "${decoded}" | sed --quiet 's/ *Signature Algorithm: *//p')
+
+echo "${algorythm} - expires ${expiry} - verify ${verify}"
+
+return=0
+
+# If certificate already expired
+if [ ${expiry_epoc} -lt $(date +%s) ]; then
+  echo "ERROR - certificate has expired"
+  return=3
+
+# Else if it's an SHA-2 certificate
+elif [ ${algorythm} = "sha256WithRSAEncryption" ]; then
+  echo "OK - already using SHA-2"
+
+# Else if it's an SHA-1 certificate
+elif [ ${algorythm}  = "sha1WithRSAEncryption" ]; then
+  # Status depends on expiry date
+  if [ ${expiry_epoc} -lt $(date --date 2016-01-01 +%s) ]; then
+    echo "OK - certificate expires before deadline"
+  elif [ ${expiry_epoc} -lt $(date --date 2016-06-01 +%s) ]; then
+    echo "PROBLEM - warning icon in Chrome 41+ (Jan/Feb 2015)"
+    return=1
+  elif [ ${expiry_epoc} -lt $(date --date 2016-12-31 +%s) ]; then
+    echo "PROBLEM - warning icon in Chrome 40+ (December 2014)"
+    return=1
+  elif [ ${expiry_epoc} -lt $(date --date 2017-01-01 +%s) ]; then
+    echo "PROBLEM - warning icon in Chrome 40+ (December 2014)"
+    echo "Automatic replacement by Janet (issued with less that 3-year life)"
+    return=1
+  else
+    echo "PROBLEM - warning icon in Chrome 39 (November 2014)"
+    echo "          null security icon in Chrome 40 (December 2014)"
+    echo "          error icon in Chrome 41+ (Jan/Feb 2015)"
+    echo "          rejected by all major browsers from Jan 2017"
+    echo "Automatic replacement by Janet"
+    return=2
+  fi
+
+# Else we don't know what it is
+else
+  echo "ERROR - unrecognised signature algorythm"
+  return=3
+
+fi
+
+exit ${return}
