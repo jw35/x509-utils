@@ -2,7 +2,8 @@
 
 # Read certificate data from the supplied file, or stdin. Remove
 # blanks, append/prepend BEGIN/END lines if missing, and lob the
-# result at 'openssl x509'
+# result at 'openssl x509' to display selected attributes from the
+# certificate
 
 DATA=$(cat ${1} | sed 's/^ *//')
 

@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Read CSR data from the supplied file, or stdin. Append/prepend
-# BEGIN/END lines if missing, and lob the result at 'openssl req'
+# Read PEM-formatted CSR data from the supplied file, or
+# stdin. Append/prepend BEGIN/END lines if missing, and lob the result
+# at 'openssl req' with some helpful formatting options
 
 DATA=$(cat ${1})
 

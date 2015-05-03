@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# Read certificate data from the supplied file, or stdin. Remove
-# blanks, append/prepend BEGIN/END lines if missing, and lob the
-# result at 'openssl x509'
+# Read PEM-formatted certificate data from the supplied file, or
+# stdin. Remove blanks, append/prepend BEGIN/END lines if missing, and
+# lob the result at 'openssl x509' with some helpful formatting
+# options
 
 DATA=$(cat ${1} | sed 's/^ *//')
 

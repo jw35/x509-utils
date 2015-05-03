@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Connect to a remote SSL-capable web server and extract its certificate
+# Connect to a remote SSL-capable server and extract its certificate
 
 set -o pipefail
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Connect to a remote SSL-capable web server, extract its certificate
-# and display its SHA-1 --> SHA-2 transition status
+# Connect to a remote SSL-capable server, extract its certificate and
+# display its SHA-1 --> SHA-2 transition status
 
 set -o pipefail
 set -e
@@ -56,19 +56,19 @@ elif [ ${algorythm}  = "sha1WithRSAEncryption" ]; then
   if [ ${expiry_epoc} -lt $(date --date 2016-01-01 +%s) ]; then
     echo "OK - certificate expires before deadline"
   elif [ ${expiry_epoc} -lt $(date --date 2016-06-01 +%s) ]; then
-    echo "PROBLEM - warning icon in Chrome 41+ (Jan/Feb 2015)"
+    echo "PROBLEM - warning icon in Chrome 41+ (from Jan/Feb 2015)"
     return=1
   elif [ ${expiry_epoc} -lt $(date --date 2016-12-31 +%s) ]; then
-    echo "PROBLEM - warning icon in Chrome 40+ (December 2014)"
+    echo "PROBLEM - warning icon in Chrome 40+ (from December 2014)"
     return=1
   elif [ ${expiry_epoc} -lt $(date --date 2017-01-01 +%s) ]; then
-    echo "PROBLEM - warning icon in Chrome 40+ (December 2014)"
+    echo "PROBLEM - warning icon in Chrome 40+ (from December 2014)"
     echo "Automatic replacement by Janet (issued with less that 3-year life)"
     return=1
   else
-    echo "PROBLEM - warning icon in Chrome 39 (November 2014)"
-    echo "          null security icon in Chrome 40 (December 2014)"
-    echo "          error icon in Chrome 41+ (Jan/Feb 2015)"
+    echo "PROBLEM - warning icon in Chrome 39 (from November 2014)"
+    echo "          null security icon in Chrome 40 (from December 2014)"
+    echo "          error icon in Chrome 42+ (from April 2015)"
     echo "          rejected by all major browsers from Jan 2017"
     echo "Automatic replacement by Janet"
     return=2

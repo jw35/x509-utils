@@ -2,7 +2,7 @@
 
 set -o pipefail
 
-# Connect to a remote SSL-capable web server and extract its certificate
+# Connect to a remote SSL-capable server and extract its certificate
 
 # Update to supply trusted cert data (-CApath or -CAfile) 
 CAARG='-CApath /etc/ssl/certs'
