@@ -1,0 +1,142 @@
+#!/usr/bin/env python
+from __future__ import print_function
+
+'''
+A wrapper around 'openssl req' to simplify creating keys and
+certificate signing requests (CSR) from the command
+line. Significantly it makes it possible to include Subject
+Alternative Names in such requests -- something that normally requires
+the creation of an OpenSSL configuration file.
+
+  Usage: make-csr [options] [hostnames]
+
+Hostnames to include in the CSR can be supplied on the command line;
+if not they are read from standard input. The first name supplied
+forms the CN component of the subject name in the request; subsequent
+names appear in 'Subject Alternative Name' (SAN) extensions.
+
+The command creates a new 2048-bit RSA key and a sha256-signed CSR in
+files with named after the first host name in the request. The CSR is
+also output to standard output. The command won't overwrite an
+existing key or csr unless --force is supplied. The key will be
+encrypted unless --nocrypt is specified. If the key isn't encrypted it
+will only be readable by the user running the command.
+
+The subject name in the request should be acceptable to CAs that
+provide most identification information themselves (such as QuoVadis
+under the Jisc agreement). By default the name includes only "C=GB"
+and a single CN field. The --ou option allows an Organization Unit
+component to be included, --c option allows the default country to be
+replaced.
+
+Options summary:
+  -h, --help  show this help message and exit
+  --ou=OU     set the Organization Unit in the request to OU (omit by default)
+  --c=C       set the Country code in the request to C (default GB)
+  --force     force overwrite of existing key file
+  --nocrypt   disable key encryption
+'''
+
+import tempfile
+import subprocess
+import optparse
+import sys
+import os.path
+
+usage = "usage: %prog [options] [hostnames]"
+parser = optparse.OptionParser(usage=usage)
+parser.add_option("--ou", dest="ou", action="store",
+                  help="set the Organization Unit in the request to OU (omit by default)")
+parser.add_option("--c", dest="c", action="store", default='GB',
+                  help="set the Country code in the request to C (default GB)")
+parser.add_option("--force", dest="force", action="store_true",
+                  help="force overwrite of existing key file")
+parser.add_option("--nocrypt", dest="nocrypt", action="store_true",
+                  help="disable key encryption")          
+(options, args) = parser.parse_args()
+
+hostnames = []
+if args:
+    hostnames = args
+else:
+    for line in sys.stdin.readlines():
+        hostnames.append(line.strip())
+	
+if len(hostnames) < 1:
+    print("No hostnames supplied - need at least one", file=sys.stderr)
+    sys.exit(1)
+
+basename = hostnames[0].replace('.','_')
+basename = basename.replace('*','STAR')
+key = basename + '.key'
+csr = basename + '.csr'
+
+if os.path.exists(key) and not options.force:
+    print("Key file '%s' exists - won't overwrite" % (key), file=sys.stderr)
+    print("Delete the file or use --force to regenerate", file=sys.stderr)
+    sys.exit(2)
+
+if os.path.exists(csr) and not options.force:
+    print("CSR file '%s' exists - won't overwrite" % (csr), file=sys.stderr)
+    print("Delete the file or use --force to regenerate", file=sys.stderr)
+    sys.exit(2)
+
+# Delete any exitsing files so we can tell if they are recreated OK
+for file in (key,csr):
+    if os.path.exists(file):
+        os.remove(file)
+
+try:
+    # Need delete=False so file can closed (for Windows) and not deleted
+    config = tempfile.NamedTemporaryFile(delete=False, mode='w+t')
+    config.write("[ req ]\n")
+    config.write("default_bits = 2048\n")
+    config.write("default_md = sha256\n")
+    config.write("distinguished_name = dn\n")
+    config.write("string_mask = nombstr\n")
+    config.write("prompt = no\n")
+    if options.nocrypt:
+        config.write("encrypt_key = no\n")
+    if len(hostnames) > 1:
+        config.write("req_extensions = ext\n")
+        config.write("[ ext ]\n")
+        config.write("subjectAltName=@alt_section\n")
+    config.write("[ dn ]\n")
+    config.write("countryName = %s\n" % (options.c))
+    if options.ou:
+        config.write("organizationalUnitName=%s\n" % (options.ou))
+    config.write("commonName = %s\n" % (hostnames[0]))
+    if len(hostnames) > 1:
+        config.write("[ alt_section ]\n")
+        for index, value in enumerate(hostnames[1:]):
+            config.write("DNS.%d=%s\n" % (index,value))
+
+    # Close the file so it can be opened by opessl under Windows
+    config.close()
+
+    req = ["openssl", "req", 
+           "-config", config.name,
+           "-new", 
+           "-out", csr, 
+           "-keyout", key]
+    # Restrict visability of created files (esp. the key)
+    if options.nocrypt:       
+        os.umask(0o066)
+    try:
+        subprocess.check_call(req)
+    except OSError as e:
+        print("'"+ e.strerror + "' " + 
+              "when executing the 'openssl' command", file=sys.stderr)
+        print("(is OpenSSL installed?)", file=sys.stderr)
+        sys.exit(4)
+    except subprocess.CalledProcessError as e:
+        sys.exit(e.returncode)
+    # Only if CSR was created (openssl error reporting is unreliable)
+    if os.path.exists(csr):
+        # Relax restrictions on created CSR
+        if options.nocrypt:
+            os.chmod(csr,0o644)
+        with open(csr) as csr_file:
+            print((csr_file.read()))
+finally:
+    os.remove(config.name)
