@@ -9,8 +9,7 @@ display-csr           | Read CSR data from the supplied file, or stdin. Append/p
 get-certificate       | Connect to a remote SSL-capable server and extract its certificate 
 get-chain             | Connect to a remote SSL-capable server and display the chain of certificates that it supplies
 get-sha1              | Connect to a remote SSL-capable web server, extract its certificate and display its SHA-1 --> SHA-2 transition status
-sumarise-certificate  | As 'display-certificate' but only show
-selected information from the certificate
+sumarise-certificate  | As 'display-certificate' but only show selected information from the certificate
 make-csr              | Wraper around 'openssl req' to aid generating keys and CSR's from the comamnd line. I paticlar alows SANs to be supplied without having to write an openssl config file. 
 
 These scripts all just wrap the `openssl` command-line tool which must be available on PATH. Most error handling (like feeding a CSR to `display-certificate`) is left to `openssl`, with predictable results...
