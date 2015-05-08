@@ -18,9 +18,9 @@ names appear in 'Subject Alternative Name' (SAN) extensions.
 The command creates a new 2048-bit RSA key and a sha256-signed CSR in
 files with named after the first host name in the request. The CSR is
 also output to standard output. The command won't overwrite an
-existing key or csr unless --force is supplied. The key will be
-encrypted unless --nocrypt is specified. If the key isn't encrypted it
-will only be readable by the user running the command.
+existing key unless --force is supplied. The key will be encrypted
+unless --nocrypt is specified. If the key isn't encrypted it will only
+be readable by the user running the command (at least on Unix).
 
 The subject name in the request should be acceptable to CAs that
 provide most identification information themselves (such as QuoVadis
@@ -69,24 +69,17 @@ if len(hostnames) < 1:
 basename = hostnames[0].replace('.','_')
 basename = basename.replace('*','STAR')
 key = basename + '.key'
+newkey = key + '.new'
 csr = basename + '.csr'
+newcsr = csr + '.new'
 
 if os.path.exists(key) and not options.force:
     print("Key file '%s' exists - won't overwrite" % (key), file=sys.stderr)
     print("Delete the file or use --force to regenerate", file=sys.stderr)
     sys.exit(2)
 
-if os.path.exists(csr) and not options.force:
-    print("CSR file '%s' exists - won't overwrite" % (csr), file=sys.stderr)
-    print("Delete the file or use --force to regenerate", file=sys.stderr)
-    sys.exit(2)
-
-# Delete any exitsing files so we can tell if they are recreated OK
-for file in (key,csr):
-    if os.path.exists(file):
-        os.remove(file)
-
 try:
+
     # Need delete=False so file can closed (for Windows) and not deleted
     config = tempfile.NamedTemporaryFile(delete=False, mode='w+t')
     config.write("[ req ]\n")
@@ -111,17 +104,23 @@ try:
         for index, value in enumerate(hostnames[1:]):
             config.write("DNS.%d=%s\n" % (index,value))
 
-    # Close the file so it can be opened by opessl under Windows
+    # Close the file so it can be opened by openssl under Windows
     config.close()
+
+    # Delete pre-existing temp files so we can detect creation
+    if os.path.exists(newkey): os.remove(newkey)
+    if os.path.exists(newcsr): os.remove(newcsr)
+
+    # Restrict visability of created files (esp. the key)
+    if options.nocrypt:       
+        os.umask(0o066)
 
     req = ["openssl", "req", 
            "-config", config.name,
            "-new", 
-           "-out", csr, 
-           "-keyout", key]
-    # Restrict visability of created files (esp. the key)
-    if options.nocrypt:       
-        os.umask(0o066)
+           "-out", newcsr, 
+           "-keyout", newkey]
+
     try:
         subprocess.check_call(req)
     except OSError as e:
@@ -131,12 +130,23 @@ try:
         sys.exit(4)
     except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
-    # Only if CSR was created (openssl error reporting is unreliable)
-    if os.path.exists(csr):
-        # Relax restrictions on created CSR
+
+    # Only if new files created (openssl error reporting is unreliable)
+    if os.path.exists(newcsr) and os.path.exists(newkey):
+        # os.rename fails on Windows if dest exists
+        if os.name == 'nt':
+            if os.path.exists(key): os.remove(key)
+            if os.path.exists(csr): os.remove(csr)
+        os.rename(newkey,key)
+        os.rename(newcsr,csr)
+        # Relax access restrictions on created CSR
         if options.nocrypt:
             os.chmod(csr,0o644)
         with open(csr) as csr_file:
             print((csr_file.read()))
+    else:
+        print("Key/CSR generation failed", file=sys.stderr)
+        sys.exit(5)
+        
 finally:
     os.remove(config.name)
