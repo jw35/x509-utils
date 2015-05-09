@@ -44,23 +44,47 @@ import sys
 import os.path
 
 usage = "usage: %prog [options] [hostnames]"
-parser = optparse.OptionParser(usage=usage)
+
+description = '''Generates a key and certificate signing request (CSR). 
+List one or more host names on the command line or supply them on standard 
+input.
+'''
+epilog='''The first host name supplied forms the CN element of the CSR's
+name, the rest go into subject alternative name (SAN) extensions. The command 
+creates a new 2048-bit RSA key and a sha256-signed CSR in files named
+after the first host name. The CSR is also printed.
+'''
+parser = optparse.OptionParser(usage=usage, 
+                               description=description,
+                               epilog=epilog,
+                               version="%prog 2.0")
 parser.add_option("--ou", dest="ou", action="store",
-                  help="set the Organization Unit in the request to OU (omit by default)")
+                  help="set the Organization Unit in the request " +
+                  "to OU (omit by default)")
 parser.add_option("--c", dest="c", action="store", default='GB',
-                  help="set the Country code in the request to C (default GB)")
+                  help="set the Country code in the request to C " +
+                  "(default %default)")
 parser.add_option("--force", dest="force", action="store_true",
                   help="force overwrite of existing key file")
-parser.add_option("--nocrypt", dest="nocrypt", action="store_true",
-                  help="disable key encryption")          
+parser.add_option("--nocrypt", "--nodes", dest="nocrypt", action="store_true",
+                  help="disable key encryption")
+parser.add_option("--dump", dest="dump", action="store_true",
+                  help="display the decoded content of the CSR")          
 (options, args) = parser.parse_args()
 
 hostnames = []
 if args:
     hostnames = args
 else:
-    for line in sys.stdin.readlines():
-        hostnames.append(line.strip())
+    if sys.stdin.isatty():
+        print("Host names, one per line. blank line/CTRL-D/CTRL-Z to finish",
+              file=sys.stderr)
+        print("(abort and try '%s --help' for other ways to use it)" 
+              % (os.path.basename(sys.argv[0])), file=sys.stderr)
+    line = sys.stdin.readline().strip()
+    while line:
+        hostnames.append(line)
+        line = sys.stdin.readline().strip()
 	
 if len(hostnames) < 1:
     print("No hostnames supplied - need at least one", file=sys.stderr)
@@ -144,6 +168,11 @@ try:
             os.chmod(csr,0o644)
         with open(csr) as csr_file:
             print((csr_file.read()))
+        if options.dump:
+            dump = ["openssl", "req",
+                    "-in", csr,
+                    "-noout", "-text"]
+            subprocess.call(dump)
     else:
         print("Key/CSR generation failed", file=sys.stderr)
         sys.exit(5)
