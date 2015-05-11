@@ -52,6 +52,10 @@ import subprocess
 import sys
 import tempfile
 
+OPTION_ERROR = 1
+NEED_FORCE = 2
+EXEC_ERROR =3
+
 usage = "usage: %prog [options] [hostnames]"
 description = '''Generates a key and coresponding certificate signing
 request (CSR). List host names on the command line or read them from a file 
@@ -91,7 +95,7 @@ if options.file:
             f = open(options.file)
         except IOError as e:
             print("%s: %s" % (e.filename,e.strerror), file=sys.stderr)
-            sys.exit(1)
+            sys.exit(OPTION_ERROR)
     for line in f.readlines():
         line = line.strip()
         if line == '': continue
@@ -100,7 +104,7 @@ if options.file:
 if len(hostnames) < 1:
     print("No hostnames supplied - need at least one", file=sys.stderr)
     print("(see %s --help)" % (os.path.basename(sys.argv[0])), file=sys.stderr)
-    sys.exit(1)
+    sys.exit(OPTION_ERROR)
 
 basename = hostnames[0].replace('*','STAR')
 basename = re.sub(r'[^a-zA-Z0-9]','_',basename)
@@ -112,7 +116,7 @@ newcsr = csr + '.new'
 if os.path.exists(key) and not options.force:
     print("Key file '%s' exists - won't overwrite" % (key), file=sys.stderr)
     print("Delete the file or use --force to regenerate", file=sys.stderr)
-    sys.exit(2)
+    sys.exit(NEED_FORCE)
 
 try:
 
@@ -160,10 +164,9 @@ try:
     try:
         subprocess.check_call(req)
     except OSError as e:
-        print("'"+ e.strerror + "' " + 
-              "when executing the 'openssl' command", file=sys.stderr)
-        print("(is OpenSSL installed?)", file=sys.stderr)
-        sys.exit(4)
+        print("%s when executing openssl (is OpenSSL installed?)" 
+              % (e.strerror), file=sys.stderr)
+        sys.exit(EXEC_ERROR)
     except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
 
@@ -181,17 +184,18 @@ try:
         with open(csr) as csr_file:
             print((csr_file.read()))
         if options.dump:
-            dump = ["openssl", "req",
+            dump = ["opensslx", "req",
                     "-in", csr,
                     "-noout", "-text"]
             try:
                 subprocess.call(dump)
             except OSError as e:
-                print("'"+ e.strerror + "' " + 
-                      "when dumping the certificate", file=sys.stderr)
+                print("%s when dumping the certificate" % (e.strerror), 
+                      file=sys.stderr)
+                sys.exit(EXEC_ERROR)
     else:
         print("Key/CSR generation failed", file=sys.stderr)
-        sys.exit(5)
+        sys.exit(EXEC_ERROR)
         
 finally:
     os.remove(config.name)
