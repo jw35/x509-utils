@@ -45,11 +45,12 @@ Options:
   --dump              display the decoded content of the CSR
 '''
 
-import tempfile
-import subprocess
 import optparse
-import sys
 import os.path
+import re
+import subprocess
+import sys
+import tempfile
 
 usage = "usage: %prog [options] [hostnames]"
 description = '''Generates a key and coresponding certificate signing
@@ -101,8 +102,8 @@ if len(hostnames) < 1:
     print("(see %s --help)" % (os.path.basename(sys.argv[0])), file=sys.stderr)
     sys.exit(1)
 
-basename = hostnames[0].replace('.','_')
-basename = basename.replace('*','STAR')
+basename = hostnames[0].replace('*','STAR')
+basename = re.sub(r'[^a-zA-Z0-9]','_',basename)
 key = basename + '.key'
 newkey = key + '.new'
 csr = basename + '.csr'
