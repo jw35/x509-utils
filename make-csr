@@ -43,6 +43,9 @@ Options:
   --force             force overwrite of existing key file
   --nocrypt, --nodes  disable key encryption
   --dump              display the decoded content of the CSR
+
+Copyright (c) 2015 University of Cambridge
+
 '''
 
 import optparse
