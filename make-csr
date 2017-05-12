@@ -14,7 +14,7 @@ the creation of an OpenSSL configuration file.
 Hostnames to include in the CSR can be supplied on the command line
 and/or read from the file identified by the --file option (a file name
 of '-' will read from standard input).  The first host name supplied
-forms the CN component of the subject name in the request; subsequent
+forms the CN component of the subject name in the request; all
 names appear in 'Subject Alternative Name' (SAN) extensions.
 
 The command creates a new 2048-bit RSA key and a sha256-signed CSR in
@@ -133,19 +133,17 @@ try:
     config.write("prompt = no\n")
     if options.nocrypt:
         config.write("encrypt_key = no\n")
-    if len(hostnames) > 1:
-        config.write("req_extensions = ext\n")
-        config.write("[ ext ]\n")
-        config.write("subjectAltName=@alt_section\n")
+    config.write("req_extensions = ext\n")
+    config.write("[ ext ]\n")
+    config.write("subjectAltName=@alt_section\n")
     config.write("[ dn ]\n")
     config.write("countryName = %s\n" % (options.c))
     if options.ou:
         config.write("organizationalUnitName=%s\n" % (options.ou))
     config.write("commonName = %s\n" % (hostnames[0]))
-    if len(hostnames) > 1:
-        config.write("[ alt_section ]\n")
-        for index, value in enumerate(hostnames[1:]):
-            config.write("DNS.%d=%s\n" % (index,value))
+    config.write("[ alt_section ]\n")
+    for index, value in enumerate(hostnames):
+        config.write("DNS.%d=%s\n" % (index,value))
 
     # Close the file so it can be opened by openssl under Windows
     config.close()
