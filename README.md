@@ -30,4 +30,4 @@ As 'display-certificate' but only show selected information from the certificate
 
 ## make-csr
 
-Wrapper around 'openssl req' to aid generating keys and CSR's from the command line. In particular allows SANs to be supplied without having to write an openssl config file. 
+Wrapper around 'openssl req' to aid generating keys and CSRs from the command line. In particular allows SANs to be supplied without having to write an openssl config file. 
