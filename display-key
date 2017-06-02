@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Read RSA key data from the supplied file, or stdin. Remove
+# blanks, append/prepend BEGIN/END lines if missing, and lob the
+# result at 'openssl rsa'
+
+DATA=$(cat ${1} | sed 's/^ *//')
+
+START=""
+END=""
+if [ "${DATA:0:10}" != "-----BEGIN" ]; then
+  START="-----BEGIN PRIVATE KEY-----\n"
+  END="-----END PRIVATE KEY-----\n"
+fi
+
+#{ echo -en "${START}"
+#  echo "${DATA}"
+#  echo -en "${END}"
+#} | cat
+
+
+{ echo -en "${START}"
+  echo "${DATA}"
+  echo -en "${END}"
+} | openssl rsa -noout -text 
+
+
+

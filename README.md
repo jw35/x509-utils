@@ -12,6 +12,10 @@ Read PEM-formatted certificate data from the supplied file, or stdin. Remove lea
 
 Read CSR data from the supplied file, or stdin. Append/prepend BEGIN/END lines if missing, and lob the result at 'openssl req' with some helpful formatting options
 
+## display-key
+
+Read RSA key data from the supplied file, or stdin. Remove leading/trailing blanks, append/prepend BEGIN/END lines if missing, and lob the result at 'openssl rsa'
+
 ## get-certificate
 
 Connect to a remote SSL-capable server and extract its certificate 
