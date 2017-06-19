@@ -10,20 +10,14 @@ DATA=$(cat ${1} | sed 's/^ *//')
 START=""
 END=""
 if [ "${DATA:0:10}" != "-----BEGIN" ]; then
-  START="-----BEGIN CERTIFICATE-----\n"
-  END="-----END CERTIFICATE-----\n"
+  DATA="-----BEGIN CERTIFICATE-----\n${DATA}\n-----END CERTIFICATE-----\n"
 fi
 
-#{ echo -en "${START}"
-#  echo "${DATA}"
-#  echo -en "${END}"
-#} | cat
+# echo "${DATA}" | cat
 
+echo "${DATA}" | openssl x509 -noout -text -fingerprint -nameopt esc_ctrl,esc_msb,space_eq,sep_multiline -certopt no_header,no_sigdump
 
-{ echo -en "${START}"
-  echo "${DATA}"
-  echo -en "${END}"
-} | openssl x509 -noout -text -fingerprint -sha256 -nameopt esc_ctrl,esc_msb,space_eq,sep_multiline -certopt no_header,no_sigdump
+echo "${DATA}" | openssl x509 -noout -fingerprint -sha256 
 
 
 
