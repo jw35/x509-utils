@@ -15,8 +15,12 @@ fi
 
 # echo "${DATA}" | cat
 
-echo "${DATA}" | openssl x509 -noout -text -fingerprint -nameopt esc_ctrl,esc_msb,space_eq,sep_multiline -certopt no_header,no_sigdump
+echo "${DATA}" | openssl x509 -noout -text -nameopt esc_ctrl,esc_msb,space_eq,sep_multiline -certopt no_header,no_sigdump
 
+echo ""
+
+echo "${DATA}" | openssl x509 -noout -fingerprint -md5
+echo "${DATA}" | openssl x509 -noout -fingerprint -sha1 
 echo "${DATA}" | openssl x509 -noout -fingerprint -sha256 
 
 
