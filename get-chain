@@ -16,7 +16,7 @@ if [ "!${hostname}!" == "!!" ]; then
 fi
 
 response=$(echo | \
-           openssl s_client -connect ${hostname}:${port} ${CAARG} 2>&1)
+           openssl s_client -connect "${hostname}":"${port}" ${CAARG} 2>&1)
 rc=$?
 if [ ${rc} -ne 0 ]; then
     echo "${response}" >&2

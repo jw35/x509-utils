@@ -19,7 +19,7 @@ fi
 
 # Conect to target
 set +e
-response=$(echo | openssl s_client -connect ${hostname}:${port} ${CAARG} 2>&1)
+response=$(echo | openssl s_client -connect "${hostname}":"${port}" ${CAARG} 2>&1)
 rc=$?
 if [ ${rc} -ne 0 ]; then
   echo "${response}" >&2
@@ -47,11 +47,11 @@ if [ ${expiry_epoc} -lt $(date +%s) ]; then
   return=3
 
 # Else if it's an SHA-2 certificate
-elif [ ${algorythm} = "sha256WithRSAEncryption" ]; then
+elif [ "${algorythm}" = "sha256WithRSAEncryption" ]; then
   echo "OK - already using SHA-2"
 
 # Else if it's an SHA-1 certificate
-elif [ ${algorythm}  = "sha1WithRSAEncryption" ]; then
+elif [ "${algorythm}"  = "sha1WithRSAEncryption" ]; then
   # Status depends on expiry date
   if [ ${expiry_epoc} -lt $(date --date 2016-01-01 +%s) ]; then
     echo "OK - certificate expires before deadline"

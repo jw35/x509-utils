@@ -5,15 +5,15 @@
 # lob the result at 'openssl x509' with some helpful formatting
 # options
 
-DATA=$(cat ${1} | sed 's/^ *//')
+DATA=$(sed 's/^ *//' ${1})
 
-START=""
-END=""
+#echo "${DATA}" | cat
+
 if [ "${DATA:0:10}" != "-----BEGIN" ]; then
-  DATA="-----BEGIN CERTIFICATE-----\n${DATA}\n-----END CERTIFICATE-----\n"
+  DATA=$'-----BEGIN CERTIFICATE-----\n'${DATA}$'\n-----END CERTIFICATE-----\n'
 fi
 
-# echo "${DATA}" | cat
+#echo "${DATA}" | cat
 
 echo "${DATA}" | openssl x509 -noout -text -nameopt esc_ctrl,esc_msb,space_eq,sep_multiline -certopt no_header,no_sigdump
 

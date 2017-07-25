@@ -4,7 +4,7 @@
 # blanks, append/prepend BEGIN/END lines if missing, and lob the
 # result at 'openssl rsa'
 
-DATA=$(cat ${1} | sed 's/^ *//')
+DATA=$(sed 's/^ *//' ${1})
 
 START=""
 END=""
