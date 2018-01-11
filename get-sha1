@@ -28,14 +28,14 @@ fi
 set -e
 
 # Extract and decode certificate from response
-certificate=$(echo "${response}" | sed --quiet '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p')
-verify=$(echo "${response}" | sed --quiet 's/ *Verify return code *: *//p')
+certificate=$(echo "${response}" | sed -n '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p')
+verify=$(echo "${response}" | sed -n 's/ *Verify return code *: *//p')
 decoded=$(echo "$certificate" | openssl x509 -noout -text -certopt no_sigdump)
 
 # extract exiry date and signature algorythm from certificaet
-expiry=$(echo "${decoded}" | sed --quiet 's/ *Not After *: *//p')
+expiry=$(echo "${decoded}" | sed -n 's/ *Not After *: *//p')
 expiry_epoc=$(date --date="${expiry}" +%s)
-algorythm=$(echo "${decoded}" | sed --quiet 's/ *Signature Algorithm: *//p')
+algorythm=$(echo "${decoded}" | sed -n 's/ *Signature Algorithm: *//p')
 
 echo "${algorythm} - expires ${expiry} - verify ${verify}"
 
